@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommendation System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold mb-4 text-center">Recommendation System</h2>
+        <form id="recommendationForm" class="space-y-4">
+            <div>
+                <label for="inputText" class="block text-sm font-medium text-gray-700 mb-1">Enter your preference:</label>
+                <input type="text" id="inputText" name="inputText" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-md transition duration-200 ease-in-out">Get Recommendations</button>
+        </form>
+        
+        <!-- New div to display recommendations -->
+        <div id="recommendationsContainer" class="mt-4"></div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const form = document.getElementById('recommendationForm');
+                const resultContainer = document.getElementById('resultContainer');
+                const recommendationsContainer = document.getElementById('recommendationsContainer');
+
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+
+                    const userInput = document.getElementById('inputText').value;
+                    
+                    fetch('/recomendacion', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ userId: userInput })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        
+                        recommendationsContainer.innerHTML = '';
+                        const resultHtml = `<p class="text-lg font-semibold mt-2">Recommendations for user ${userInput}:</p>`;
+                        const ul = document.createElement('ul');
+                        ul.className = 'list-disc pl-4';
+                        
+                        data.forEach(recommendation => {
+                            const li = document.createElement('li');
+                            li.textContent = recommendation;
+                            ul.appendChild(li);
+                        });
+
+                        recommendationsContainer.appendChild(ul);
+                    })
+                    .catch(error => console.error('Error:', error));
+
+                    document.getElementById('inputText').value = '';
+                });
+            });
+        </script>
+    </div>
+</body>
+</html>
