@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import KNeighborsClassifier, NearestNeighbors
 import numpy as np
 data_path = 'ml-100k/'
 
@@ -26,27 +26,40 @@ dummiesdb = dummiesdb.drop(columns=['release date','video release date','occupat
 
 
 # Crear las variables de entrenamiento para la clasificación.
-x = dummiesdb.drop(columns ='item_id')
-y = dummiesdb.item_id
+user_features = dummiesdb.pivot(index=dummiesdb.drop(columns='item_id').columns, columns='item_id', values='rating').fillna(0).values
+    
+    # Create the nearest neighbors model
+nn_model = NearestNeighbors(algorithm='brute', metric='manhattan')
 
-
-# Creación y entrenamiento del modelo.
-nn_model = KNeighborsClassifier()
-nn_model.fit(x,y)
+# Fit the model with all user features
+nn_model.fit(user_features)
 #print(dummiesdb)
 
 def get_recommendations(user_id, num_recs=10):
-    #Utilizamos el indice en la tabla inicial para encontrar la posición del ID
+   # Ensure dummiesdb is a DataFrame with user features
+    
+    
+    # Get the index of the specified user
     user_idx = dummiesdb.index.get_loc(user_id)
     
-    # Luego encontramso las vecinos similares.
-    # dado que iloc retorna una pandas series, covnierte en dataframe y se transpone para mantener el formato inicial. 
-    distances, indices = nn_model.kneighbors(pd.DataFrame(dummiesdb.iloc[dummiesdb.index.get_loc(user_id)].drop('item_id')).T, n_neighbors=num_recs+1)
-    # Aunque no es necesario se guardan las distancias 
-    #Se Guarda el índice que contiene las peliculas recomendadas
+    # Find similar users
+    distances, indices = nn_model.kneighbors([user_features[user_idx]], n_neighbors=num_recs+1)
     
+    # Remove the first element which is the user itself
+    distances = distances[0][1:]
     indices = indices[0][1:]
     
-    #Se utiliza la base con los nomrbes de las películas para retornar las lista con las 10 recomendaciones.
-
-    return moviesinfo[moviesinfo['movie id'].isin(dummiesdb.iloc[indices]['item_id'])]['movie title'].tolist()
+    # Get the recommended user IDs
+    rec_user_ids = dummiesdb.iloc[indices].index.tolist()
+    
+    # Find movies rated highly by recommended users
+    rec_movies = []
+    for rec_user_id in rec_user_ids:
+        top_movies = dummiesdb.loc[dummiesdb.index == rec_user_id].sort_values('rating', ascending=False)['item_id'].head(5).tolist()
+        rec_movies.extend(top_movies)
+    
+    # Remove duplicates and limit to top N recommendations
+    rec_movies = list(set(rec_movies))[:num_recs]
+    
+    #return rec_movies
+    return moviesinfo[moviesinfo['movie id'].isin(rec_movies)]['movie title'].tolist()
