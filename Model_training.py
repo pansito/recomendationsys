@@ -28,7 +28,7 @@ dummiesdb = dummiesdb.drop(columns=['release date','video release date','occupat
 # Crear las variables de entrenamiento para la clasificación.
 user_features = dummiesdb.pivot(index=dummiesdb.drop(columns='item_id').columns, columns='item_id', values='rating').fillna(0).values
     
-    # Create the nearest neighbors model
+# Create the nearest neighbors model
 nn_model = NearestNeighbors(algorithm='brute', metric='manhattan')
 
 # Fit the model with all user features
@@ -36,30 +36,22 @@ nn_model.fit(user_features)
 #print(dummiesdb)
 
 def get_recommendations(user_id, num_recs=10):
-   # Ensure dummiesdb is a DataFrame with user features
-    
-    
-    # Get the index of the specified user
+   
     user_idx = dummiesdb.index.get_loc(user_id)
     
-    # Find similar users
+    
     distances, indices = nn_model.kneighbors([user_features[user_idx]], n_neighbors=num_recs+1)
     
-    # Remove the first element which is the user itself
-    distances = distances[0][1:]
+    
     indices = indices[0][1:]
     
-    # Get the recommended user IDs
     rec_user_ids = dummiesdb.iloc[indices].index.tolist()
     
-    # Find movies rated highly by recommended users
     rec_movies = []
     for rec_user_id in rec_user_ids:
         top_movies = dummiesdb.loc[dummiesdb.index == rec_user_id].sort_values('rating', ascending=False)['item_id'].head(5).tolist()
         rec_movies.extend(top_movies)
     
-    # Remove duplicates and limit to top N recommendations
     rec_movies = list(set(rec_movies))[:num_recs]
     
-    #return rec_movies
     return moviesinfo[moviesinfo['movie id'].isin(rec_movies)]['movie title'].tolist()
