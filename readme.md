@@ -23,3 +23,8 @@ The [Model_training.py](https://github.com/pansito/recomendationsys/blob/main/Mo
 Insite the html function there's a javascript code which executes when the **Get Recommendations** buttom is pressed and adds the list of reccomendations. 
 
 
+## How to use it? 
+
+Just install the python requeriments for libraries and run the [backend.py](https://github.com/pansito/recomendationsys/blob/main/backend.py) file, it will create a small web interface, which can be open through any browser.
+
+
